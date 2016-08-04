@@ -5,31 +5,57 @@
  */
 EasingFunctions = {
     // no easing, no acceleration
-    linear: function (t) { return t },
+    linear: function (t) {
+        return t
+    },
     // accelerating from zero velocity
-    easeInQuad: function (t) { return t*t },
+    easeInQuad: function (t) {
+        return t * t
+    },
     // decelerating to zero velocity
-    easeOutQuad: function (t) { return t*(2-t) },
+    easeOutQuad: function (t) {
+        return t * (2 - t)
+    },
     // acceleration until halfway, then deceleration
-    easeInOutQuad: function (t) { return t<.5 ? 2*t*t : -1+(4-2*t)*t },
+    easeInOutQuad: function (t) {
+        return t < .5 ? 2 * t * t : -1 + (4 - 2 * t) * t
+    },
     // accelerating from zero velocity
-    easeInCubic: function (t) { return t*t*t },
+    easeInCubic: function (t) {
+        return t * t * t
+    },
     // decelerating to zero velocity
-    easeOutCubic: function (t) { return (--t)*t*t+1 },
+    easeOutCubic: function (t) {
+        return (--t) * t * t + 1
+    },
     // acceleration until halfway, then deceleration
-    easeInOutCubic: function (t) { return t<.5 ? 4*t*t*t : (t-1)*(2*t-2)*(2*t-2)+1 },
+    easeInOutCubic: function (t) {
+        return t < .5 ? 4 * t * t * t : (t - 1) * (2 * t - 2) * (2 * t - 2) + 1
+    },
     // accelerating from zero velocity
-    easeInQuart: function (t) { return t*t*t*t },
+    easeInQuart: function (t) {
+        return t * t * t * t
+    },
     // decelerating to zero velocity
-    easeOutQuart: function (t) { return 1-(--t)*t*t*t },
+    easeOutQuart: function (t) {
+        return 1 - (--t) * t * t * t
+    },
     // acceleration until halfway, then deceleration
-    easeInOutQuart: function (t) { return t<.5 ? 8*t*t*t*t : 1-8*(--t)*t*t*t },
+    easeInOutQuart: function (t) {
+        return t < .5 ? 8 * t * t * t * t : 1 - 8 * (--t) * t * t * t
+    },
     // accelerating from zero velocity
-    easeInQuint: function (t) { return t*t*t*t*t },
+    easeInQuint: function (t) {
+        return t * t * t * t * t
+    },
     // decelerating to zero velocity
-    easeOutQuint: function (t) { return 1+(--t)*t*t*t*t },
+    easeOutQuint: function (t) {
+        return 1 + (--t) * t * t * t * t
+    },
     // acceleration until halfway, then deceleration
-    easeInOutQuint: function (t) { return t<.5 ? 16*t*t*t*t*t : 1+16*(--t)*t*t*t*t }
+    easeInOutQuint: function (t) {
+        return t < .5 ? 16 * t * t * t * t * t : 1 + 16 * (--t) * t * t * t * t
+    }
 };
 
 (function () {
@@ -44,7 +70,8 @@ EasingFunctions = {
             textColor: '#000',
             fontFace: 'Calibri',
             duration: 3000,
-            easingFunction: 'easeInOutQuint'
+            easingFunction: 'easeInOutQuint',
+            responsive: true
         };
 
         // Allow initialization without arguments. When defaults are okay.
@@ -102,37 +129,55 @@ EasingFunctions = {
             var time = new Date();
             canvas.dataset.startTime = time.getTime();
 
+            /**
+             * Make sure that the container is empty and add the canvas to it
+             */
+            element.innerHTML = "";
             element.appendChild(canvas);
 
             _.canvases.push(canvas);
         });
 
         window.requestAnimationFrame(redrawCanvases.bind(this));
+
+        if (this.options.responsive) {
+            window.addEventListener('resize', resizeCanvases.bind(this));
+        }
     };
 
-    var redrawCanvases = function()
-    {
+    var resizeCanvases = function () {
+        var _ = this;
+
+        this.elements.forEach(function (element) {
+            var canvas = element.childNodes[0];
+            canvas.width = element.offsetWidth;
+            canvas.height = element.offsetWidth;
+
+            drawCanvas.call(_, canvas);
+        });
+    };
+
+    var redrawCanvases = function () {
         var _ = this;
         var stillAnimating = 0;
         var time = new Date();
 
-        this.canvases.forEach(function(canvas) {
+        this.canvases.forEach(function (canvas) {
 
-            if(parseFloat(canvas.dataset.current) < parseFloat(canvas.dataset.number)) {
+            if (parseFloat(canvas.dataset.current) < parseFloat(canvas.dataset.number)) {
                 // calculate the next position
                 var difference = time.getTime() - parseInt(canvas.dataset.startTime);
                 var percentage = difference / _.options.duration;
                 canvas.dataset.current = EasingFunctions[_.options.easingFunction](percentage) * canvas.dataset.number;
 
-
-                if(percentage <= 1) {
+                if (percentage <= 1) {
                     drawCanvas.call(_, canvas);
                     stillAnimating++;
                 }
             }
         });
 
-        if(stillAnimating > 0) {
+        if (stillAnimating > 0) {
             window.requestAnimationFrame(redrawCanvases.bind(_));
         }
     };
@@ -156,15 +201,15 @@ EasingFunctions = {
         context.strokeStyle = this.options.strokeColor;
         context.stroke();
 
-        var smallTextSize = 15;
+        var smallTextSize = canvas.height / 17;
         context.font = smallTextSize + 'px ' + this.options.fontFace;
         context.fillStyle = this.options.textColor;
         context.textAlign = 'center';
         context.fillText(canvas.dataset.text, canvas.width / 2, (canvas.height / 2) + (smallTextSize * 1.5));
 
-        var largeTextSize = 55;
+        var largeTextSize = canvas.height / 5;
         context.font = largeTextSize + 'px ' + this.options.fontFace;
-        context.fillText(Math.ceil(canvas.dataset.current), canvas.width / 2, (canvas.height / 2));
+        context.fillText(Math.round(canvas.dataset.current), canvas.width / 2, (canvas.height / 2));
     };
 
     function extendDefaults(source, properties) {
@@ -180,8 +225,3 @@ EasingFunctions = {
     }
 
 })();
-
-new ArcCounter({
-    strokeColor: '#a90d2c',
-    fontFace: 'Lato'
-});
