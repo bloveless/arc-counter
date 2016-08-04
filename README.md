@@ -38,6 +38,9 @@ Most of the data for the counters come from these data attributes.
 - ```data-max```: is the maximum number represented by the counter. This
 is used to determine how far the arc around the counter should go.
 - ```data-text```: is the text that will be displayed below the counter.
+- ```data-background```: is the entire background color of the canvas,
+but by default the canvas is transparent so you can just color the
+containing element however you'd like and the canvas will show that.
 
 But, there are also some attributes you can add to the ArcCounter
 initialization that will be applied to all the counter.
