@@ -68,7 +68,9 @@ css either will work.
 - ```duration```: is how long it takes for the counter to finish
 counting
 - ```easingFunction```: is the function you want to use when drawing the
-arc
+arc. All the easing functions come from this gist
+[Easing Functions](https://gist.github.com/gre/1650294) so you can use
+any function name from that gist.
 - ```responsive```: if true will attache a resize event to the window so
 the arcs are always 100% of their container.
 
