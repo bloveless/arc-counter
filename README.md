@@ -55,7 +55,8 @@ The defaults are presented below.
             fontFace: 'Calibri',
             duration: 3000,
             easingFunction: 'easeInOutQuint',
-            responsive: true
+            responsive: true,
+			onlyAnimateOnVisible: true
         };
 
 - ```selector```: is the css selector for your counters. If you change
@@ -73,6 +74,8 @@ arc. All the easing functions come from this gist
 any function name from that gist.
 - ```responsive```: if true will attache a resize event to the window so
 the arcs are always 100% of their container.
+- ```onlyAnimateOnVisible```: if set to true the counters will only
+start their animation when they are scolled into view.
 
 You can set one or many options as follows:
 

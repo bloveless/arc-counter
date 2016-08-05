@@ -58,6 +58,12 @@ EasingFunctions = {
     }
 };
 
+/**
+ * https://github.com/bloveless/arc-counter
+ *
+ * Brennon Loveless
+ * August 5, 2016
+ */
 (function () {
 
     // Define our constructor
@@ -71,7 +77,8 @@ EasingFunctions = {
             fontFace: 'Calibri',
             duration: 3000,
             easingFunction: 'easeInOutQuint',
-            responsive: true
+            responsive: true,
+            onlyAnimateOnVisible: true
         };
 
         // Allow initialization without arguments. When defaults are okay.
@@ -85,15 +92,68 @@ EasingFunctions = {
 
         this.elements = document.querySelectorAll(this.options.selector);
         this.canvases = [];
+        this.scrollListener = undefined;
+        this.resizeListener = undefined;
 
         init.call(this);
 
     };
 
-    // Public Methods
+    // Event handlers
 
-    ArcCounter.prototype.display = function () {
-        // display code goes here
+    /**
+     * So that the scroll isn't fired a hundred times a second I remove the scroll event listener,
+     * and re-add it after 500ms.
+     */
+    var scrollHandler = function () {
+        window.removeEventListener('scroll', this.scrollListener);
+
+        var _ = this;
+
+        this.canvases.forEach(function (canvas) {
+
+            if(!canvas.dataset.visible) {
+                var windowHeight = window.innerHeight;
+
+                /**
+                 * If the canvas is in the view then set it's start time
+                 * and mark it visible.
+                 */
+                if (canvas.getBoundingClientRect().top < windowHeight) {
+                    var time = new Date();
+                    canvas.dataset.startTime = time.getTime();
+                    canvas.dataset.visible = true;
+                }
+            }
+        });
+
+        setTimeout(function () {
+            window.addEventListener('scroll', _.scrollListener);
+        }, 500);
+    };
+
+    /**
+     * So that the resize isn't called a hundred time a second I remove the scroll event listener,
+     * and re-add it after 250ms.
+     */
+    var resizeHandler = function () {
+        window.removeEventListener('resize', this.resizeListener);
+
+        var _ = this;
+
+        redrawCanvases.bind(this);
+
+        this.elements.forEach(function (element) {
+            var canvas = element.childNodes[0];
+            canvas.width = element.offsetWidth;
+            canvas.height = element.offsetWidth;
+
+            drawCanvas.call(_, canvas);
+        });
+
+        setTimeout(function () {
+            window.addEventListener('resize', _.resizeListener);
+        }, 100);
     };
 
     // Private Methods
@@ -126,8 +186,6 @@ EasingFunctions = {
 
 
             drawCanvas.call(_, canvas);
-            var time = new Date();
-            canvas.dataset.startTime = time.getTime();
 
             /**
              * Make sure that the container is empty and add the canvas to it
@@ -138,48 +196,53 @@ EasingFunctions = {
             _.canvases.push(canvas);
         });
 
-        window.requestAnimationFrame(redrawCanvases.bind(this));
 
+        /**
+         * Resize the canvases on resize
+         */
         if (this.options.responsive) {
-            window.addEventListener('resize', resizeCanvases.bind(this));
+            this.resizeListener = resizeHandler.bind(this);
+            window.addEventListener('resize', this.resizeListener, false);
         }
-    };
 
-    var resizeCanvases = function () {
-        var _ = this;
+        /**
+         * Don't start the animation until the arc counter is visible.
+         */
+        if (this.options.onlyAnimateOnVisible) {
+            this.scrollListener = scrollHandler.bind(this);
+            window.addEventListener('scroll', this.scrollListener);
+        } else {
+            this.canvases.forEach(function (canvas) {
+                var time = new Date();
+                canvas.dataset.startTime = time.getTime();
+                canvas.dataset.visible = true;
+            });
+        }
 
-        this.elements.forEach(function (element) {
-            var canvas = element.childNodes[0];
-            canvas.width = element.offsetWidth;
-            canvas.height = element.offsetWidth;
-
-            drawCanvas.call(_, canvas);
-        });
+        window.requestAnimationFrame(redrawCanvases.bind(this));
     };
 
     var redrawCanvases = function () {
         var _ = this;
-        var stillAnimating = 0;
         var time = new Date();
 
         this.canvases.forEach(function (canvas) {
 
-            if (parseFloat(canvas.dataset.current) < parseFloat(canvas.dataset.number)) {
-                // calculate the next position
-                var difference = time.getTime() - parseInt(canvas.dataset.startTime);
-                var percentage = difference / _.options.duration;
-                canvas.dataset.current = EasingFunctions[_.options.easingFunction](percentage) * canvas.dataset.number;
+            if (canvas.dataset.visible) {
+                if (parseFloat(canvas.dataset.current) < parseFloat(canvas.dataset.number)) {
+                    // calculate the next position
+                    var difference = time.getTime() - parseInt(canvas.dataset.startTime);
+                    var percentage = difference / _.options.duration;
+                    canvas.dataset.current = EasingFunctions[_.options.easingFunction](percentage) * canvas.dataset.number;
 
-                if (percentage <= 1) {
-                    drawCanvas.call(_, canvas);
-                    stillAnimating++;
+                    if (percentage <= 1) {
+                        drawCanvas.call(_, canvas);
+                    }
                 }
             }
         });
 
-        if (stillAnimating > 0) {
-            window.requestAnimationFrame(redrawCanvases.bind(_));
-        }
+        window.requestAnimationFrame(redrawCanvases.bind(this));
     };
 
     var drawCanvas = function (canvas) {
