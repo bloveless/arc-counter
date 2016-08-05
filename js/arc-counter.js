@@ -110,6 +110,14 @@ EasingFunctions = {
 
         var _ = this;
 
+        shouldStartCanvases.bind(this)();
+
+        setTimeout(function () {
+            window.addEventListener('scroll', _.scrollListener);
+        }, 500);
+    };
+
+    var shouldStartCanvases = function() {
         this.canvases.forEach(function (canvas) {
 
             if(!canvas.dataset.visible) {
@@ -126,10 +134,6 @@ EasingFunctions = {
                 }
             }
         });
-
-        setTimeout(function () {
-            window.addEventListener('scroll', _.scrollListener);
-        }, 500);
     };
 
     /**
@@ -219,6 +223,7 @@ EasingFunctions = {
             });
         }
 
+        shouldStartCanvases.bind(this)();
         window.requestAnimationFrame(redrawCanvases.bind(this));
     };
 
