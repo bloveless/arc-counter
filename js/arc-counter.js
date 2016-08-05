@@ -117,10 +117,11 @@ EasingFunctions = {
         }, 500);
     };
 
-    var shouldStartCanvases = function() {
-        this.canvases.forEach(function (canvas) {
+    var shouldStartCanvases = function () {
+        for (var i = 0; i < this.canvases.length; i++) {
+            var canvas = this.canvases[i];
 
-            if(!canvas.dataset.visible) {
+            if (!canvas.dataset.visible) {
                 var windowHeight = window.innerHeight;
 
                 /**
@@ -133,7 +134,7 @@ EasingFunctions = {
                     canvas.dataset.visible = true;
                 }
             }
-        });
+        }
     };
 
     /**
@@ -143,17 +144,17 @@ EasingFunctions = {
     var resizeHandler = function () {
         window.removeEventListener('resize', this.resizeListener);
 
-        var _ = this;
-
         redrawCanvases.bind(this);
 
-        this.elements.forEach(function (element) {
+        for (var i = 0; i < this.elements.length; i++) {
+            var element = this.elements[i];
+
             var canvas = element.childNodes[0];
             canvas.width = element.offsetWidth;
             canvas.height = element.offsetWidth;
 
-            drawCanvas.call(_, canvas);
-        });
+            drawCanvas.call(this, canvas);
+        }
 
         setTimeout(function () {
             window.addEventListener('resize', _.resizeListener);
@@ -166,10 +167,9 @@ EasingFunctions = {
      * Initialize the html for each arc counter.
      */
     var init = function () {
-        var _ = this;
-
         // Create the html for each element
-        this.elements.forEach(function (element) {
+        for (var i = 0; i < this.elements.length; i++) {
+            var element = this.elements[i];
 
             var canvas = document.createElement('canvas');
 
@@ -189,7 +189,7 @@ EasingFunctions = {
             canvas.dataset.current = 0;
 
 
-            drawCanvas.call(_, canvas);
+            drawCanvas.call(this, canvas);
 
             /**
              * Make sure that the container is empty and add the canvas to it
@@ -197,9 +197,8 @@ EasingFunctions = {
             element.innerHTML = "";
             element.appendChild(canvas);
 
-            _.canvases.push(canvas);
-        });
-
+            this.canvases.push(canvas);
+        }
 
         /**
          * Resize the canvases on resize
@@ -216,11 +215,13 @@ EasingFunctions = {
             this.scrollListener = scrollHandler.bind(this);
             window.addEventListener('scroll', this.scrollListener);
         } else {
-            this.canvases.forEach(function (canvas) {
+            for (var i = 0; i < this.canvases.length; i++) {
+                var canvas = this.canvases[i];
+
                 var time = new Date();
                 canvas.dataset.startTime = time.getTime();
                 canvas.dataset.visible = true;
-            });
+            }
         }
 
         shouldStartCanvases.bind(this)();
@@ -228,24 +229,24 @@ EasingFunctions = {
     };
 
     var redrawCanvases = function () {
-        var _ = this;
         var time = new Date();
 
-        this.canvases.forEach(function (canvas) {
+        for (var i = 0; i < this.canvases.length; i++) {
+            var canvas = this.canvases[i];
 
             if (canvas.dataset.visible) {
                 if (parseFloat(canvas.dataset.current) < parseFloat(canvas.dataset.number)) {
                     // calculate the next position
                     var difference = time.getTime() - parseInt(canvas.dataset.startTime);
-                    var percentage = difference / _.options.duration;
-                    canvas.dataset.current = EasingFunctions[_.options.easingFunction](percentage) * canvas.dataset.number;
+                    var percentage = difference / this.options.duration;
+                    canvas.dataset.current = EasingFunctions[this.options.easingFunction](percentage) * canvas.dataset.number;
 
                     if (percentage <= 1) {
-                        drawCanvas.call(_, canvas);
+                        drawCanvas.call(this, canvas);
                     }
                 }
             }
-        });
+        }
 
         window.requestAnimationFrame(redrawCanvases.bind(this));
     };
