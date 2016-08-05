@@ -66,6 +66,59 @@ EasingFunctions = {
  */
 (function () {
 
+    // Utility functions
+
+    /**
+     * http://blog.garstasio.com/you-dont-need-jquery/utils/#associate-data-with-an-html-element
+     *
+     * @type {{set, get}}
+     */
+        // works in all browsers
+    var data = (function () {
+            var lastId = 0,
+                store = {};
+
+            return {
+                set: function (element, info) {
+                    var id;
+                    if (element.myCustomDataTag === undefined) {
+                        id = lastId++;
+                        element.myCustomDataTag = id;
+                    }
+                    store[id] = info;
+                },
+
+                merge: function (element, info) {
+                    var currentData = store[element.myCustomDataTag];
+                    extendObject(currentData, info);
+                    store[element.myCustomDataTag] = currentData;
+                },
+
+                get: function (element) {
+                    return store[element.myCustomDataTag];
+                }
+            };
+        }());
+
+    /**
+     * Extend and object
+     *
+     * @param source
+     * @param properties
+     * @returns {*}
+     */
+    function extendObject(source, properties) {
+        var property;
+
+        for (property in properties) {
+            if (properties.hasOwnProperty(property)) {
+                source[property] = properties[property];
+            }
+        }
+
+        return source;
+    }
+
     // Define our constructor
     this.ArcCounter = function () {
 
@@ -87,7 +140,7 @@ EasingFunctions = {
         }
 
         if (arguments[0] && typeof arguments[0] === "object") {
-            this.options = extendDefaults(defaults, arguments[0]);
+            this.options = extendObject(defaults, arguments[0]);
         }
 
         this.elements = document.querySelectorAll(this.options.selector);
@@ -102,47 +155,9 @@ EasingFunctions = {
     // Event handlers
 
     /**
-     * So that the scroll isn't fired a hundred times a second I remove the scroll event listener,
-     * and re-add it after 500ms.
-     */
-    var scrollHandler = function () {
-        window.removeEventListener('scroll', this.scrollListener);
-
-        var _ = this;
-
-        shouldStartCanvases.bind(this)();
-
-        setTimeout(function () {
-            window.addEventListener('scroll', _.scrollListener);
-        }, 500);
-    };
-
-    var shouldStartCanvases = function () {
-        for (var i = 0; i < this.canvases.length; i++) {
-            var canvas = this.canvases[i];
-
-            if (!canvas.dataset.visible) {
-                var windowHeight = window.innerHeight;
-
-                /**
-                 * If the canvas is in the view then set it's start time
-                 * and mark it visible.
-                 */
-                if (canvas.getBoundingClientRect().top < windowHeight) {
-                    var time = new Date();
-                    canvas.dataset.startTime = time.getTime();
-                    canvas.dataset.visible = true;
-                }
-            }
-        }
-    };
-
-    /**
-     * So that the resize isn't called a hundred time a second I remove the scroll event listener,
-     * and re-add it after 250ms.
+     * Resize the canvases.
      */
     var resizeHandler = function () {
-        window.removeEventListener('resize', this.resizeListener);
 
         redrawCanvases.bind(this);
 
@@ -155,10 +170,6 @@ EasingFunctions = {
 
             drawCanvas.call(this, canvas);
         }
-
-        setTimeout(function () {
-            window.addEventListener('resize', _.resizeListener);
-        }, 100);
     };
 
     // Private Methods
@@ -167,11 +178,15 @@ EasingFunctions = {
      * Initialize the html for each arc counter.
      */
     var init = function () {
+
+        var _ = this;
+        var element, canvas;
+
         // Create the html for each element
         for (var i = 0; i < this.elements.length; i++) {
-            var element = this.elements[i];
+            element = this.elements[i];
 
-            var canvas = document.createElement('canvas');
+            canvas = document.createElement('canvas');
 
             /**
              * Make a square canvas
@@ -183,13 +198,13 @@ EasingFunctions = {
                 canvas.style.backgroundColor = element.dataset.background;
             }
 
-            canvas.dataset.number = element.dataset.number;
-            canvas.dataset.max = element.dataset.max;
-            canvas.dataset.text = element.dataset.text;
-            canvas.dataset.current = 0;
-
-
-            drawCanvas.call(this, canvas);
+            data.set(canvas, {
+                number: element.dataset.number,
+                max: element.dataset.max,
+                text: element.dataset.text,
+                current: 0,
+                visible: false
+            });
 
             /**
              * Make sure that the container is empty and add the canvas to it
@@ -198,34 +213,69 @@ EasingFunctions = {
             element.appendChild(canvas);
 
             this.canvases.push(canvas);
+
+            drawCanvas.call(this, canvas);
         }
 
         /**
          * Resize the canvases on resize
          */
         if (this.options.responsive) {
-            this.resizeListener = resizeHandler.bind(this);
-            window.addEventListener('resize', this.resizeListener, false);
+            this.resizeListener = setInterval(function () {
+                resizeHandler.bind(_)();
+            }, 500);
         }
 
         /**
          * Don't start the animation until the arc counter is visible.
          */
         if (this.options.onlyAnimateOnVisible) {
-            this.scrollListener = scrollHandler.bind(this);
-            window.addEventListener('scroll', this.scrollListener);
+            this.scrollListener = setInterval(function () {
+                shouldStartCanvases.bind(_)();
+            }, 250);
         } else {
+            /**
+             * Start the animation immediately.
+             */
             for (var i = 0; i < this.canvases.length; i++) {
                 var canvas = this.canvases[i];
 
                 var time = new Date();
-                canvas.dataset.startTime = time.getTime();
-                canvas.dataset.visible = true;
+                data.merge(canvas, {
+                    startTime: time.getTime(),
+                    visible: true
+                });
             }
         }
 
+        /**
+         * Call it once just in case the counters are visible.
+         */
         shouldStartCanvases.bind(this)();
         window.requestAnimationFrame(redrawCanvases.bind(this));
+    };
+
+    var shouldStartCanvases = function () {
+
+        for (var i = 0; i < this.canvases.length; i++) {
+            var canvas = this.canvases[i];
+
+            if (!data.get(canvas).visible) {
+                var windowHeight = window.innerHeight;
+
+                /**
+                 * If the canvas is in the view then set it's start time
+                 * and mark it visible.
+                 */
+                if (canvas.getBoundingClientRect().top < windowHeight) {
+                    var time = new Date();
+                    data.merge(canvas, {
+                        startTime: time.getTime(),
+                        visible: true
+                    });
+                }
+            }
+        }
     };
 
     var redrawCanvases = function () {
@@ -234,12 +284,16 @@ EasingFunctions = {
         for (var i = 0; i < this.canvases.length; i++) {
             var canvas = this.canvases[i];
 
-            if (canvas.dataset.visible) {
-                if (parseFloat(canvas.dataset.current) < parseFloat(canvas.dataset.number)) {
+            if (data.get(canvas).visible) {
+
+                if (data.get(canvas).current < data.get(canvas).number) {
                     // calculate the next position
-                    var difference = time.getTime() - parseInt(canvas.dataset.startTime);
+                    var difference = time.getTime() - parseInt(data.get(canvas).startTime);
                     var percentage = difference / this.options.duration;
-                    canvas.dataset.current = EasingFunctions[this.options.easingFunction](percentage) * canvas.dataset.number;
+
+                    data.merge(canvas, {
+                        current: EasingFunctions[this.options.easingFunction](percentage) * data.get(canvas).number
+                    });
 
                     if (percentage <= 1) {
                         drawCanvas.call(this, canvas);
@@ -252,7 +306,7 @@ EasingFunctions = {
     };
 
     var drawCanvas = function (canvas) {
-        var endStop = (1.5 - (2 * (canvas.dataset.current / canvas.dataset.max))) * Math.PI;
+        var endStop = (1.5 - (2 * (data.get(canvas).current / data.get(canvas).max))) * Math.PI;
 
         var context = canvas.getContext('2d');
 
@@ -274,23 +328,10 @@ EasingFunctions = {
         context.font = smallTextSize + 'px ' + this.options.fontFace;
         context.fillStyle = this.options.textColor;
         context.textAlign = 'center';
-        context.fillText(canvas.dataset.text, canvas.width / 2, (canvas.height / 2) + (smallTextSize * 1.5));
+        context.fillText(data.get(canvas).text, canvas.width / 2, (canvas.height / 2) + (smallTextSize * 1.5));
 
         var largeTextSize = canvas.height / 5;
         context.font = largeTextSize + 'px ' + this.options.fontFace;
-        context.fillText(Math.round(canvas.dataset.current), canvas.width / 2, (canvas.height / 2));
+        context.fillText(Math.round(data.get(canvas).current), canvas.width / 2, (canvas.height / 2));
     };
-
-    function extendDefaults(source, properties) {
-        var property;
-
-        for (property in properties) {
-            if (properties.hasOwnProperty(property)) {
-                source[property] = properties[property];
-            }
-        }
-
-        return source;
-    }
-
 })();
