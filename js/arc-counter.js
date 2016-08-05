@@ -235,8 +235,8 @@ EasingFunctions = {
             /**
              * Start the animation immediately.
              */
-            for (var i = 0; i < this.canvases.length; i++) {
-                var canvas = this.canvases[i];
+            for (i = 0; i < this.canvases.length; i++) {
+                canvas = this.canvases[i];
 
                 var time = new Date();
                 data.merge(canvas, {
