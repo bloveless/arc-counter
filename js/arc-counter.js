@@ -145,8 +145,6 @@ EasingFunctions = {
 
         this.elements = document.querySelectorAll(this.options.selector);
         this.canvases = [];
-        this.scrollListener = undefined;
-        this.resizeListener = undefined;
 
         init.call(this);
 
@@ -221,7 +219,7 @@ EasingFunctions = {
          * Resize the canvases on resize
          */
         if (this.options.responsive) {
-            this.resizeListener = setInterval(function () {
+            setInterval(function () {
                 resizeHandler.bind(_)();
             }, 500);
         }
@@ -230,7 +228,7 @@ EasingFunctions = {
          * Don't start the animation until the arc counter is visible.
          */
         if (this.options.onlyAnimateOnVisible) {
-            this.scrollListener = setInterval(function () {
+            setInterval(function () {
                 shouldStartCanvases.bind(_)();
             }, 250);
         } else {
@@ -255,6 +253,9 @@ EasingFunctions = {
         window.requestAnimationFrame(redrawCanvases.bind(this));
     };
 
+    /**
+     * An animation should start if the canvas is completely visible in the window.
+     */
     var shouldStartCanvases = function () {
 
         for (var i = 0; i < this.canvases.length; i++) {
@@ -267,7 +268,7 @@ EasingFunctions = {
                  * If the canvas is in the view then set it's start time
                  * and mark it visible.
                  */
-                if (canvas.getBoundingClientRect().top < windowHeight) {
+                if (canvas.getBoundingClientRect().top < (windowHeight - canvas.height)) {
                     var time = new Date();
                     data.merge(canvas, {
                         startTime: time.getTime(),
@@ -278,6 +279,10 @@ EasingFunctions = {
         }
     };
 
+    /**
+     * This is where the animation happens. The current position is updated and the canvas is sent
+     * to the drawCanvas method to be drawn.
+     */
     var redrawCanvases = function () {
         var time = new Date();
 
@@ -305,6 +310,11 @@ EasingFunctions = {
         window.requestAnimationFrame(redrawCanvases.bind(this));
     };
 
+    /**
+     * Draw the canvas.
+     *
+     * @param canvas
+     */
     var drawCanvas = function (canvas) {
         var endStop = (1.5 - (2 * (data.get(canvas).current / data.get(canvas).max))) * Math.PI;
 
