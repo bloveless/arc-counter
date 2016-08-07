@@ -292,9 +292,18 @@ EasingFunctions = {
             if (data.get(canvas).visible) {
 
                 if (data.get(canvas).current < data.get(canvas).number) {
-                    // calculate the next position
+
+                    /**
+                     * Calculate the next position
+                     */
                     var difference = time.getTime() - parseInt(data.get(canvas).startTime);
-                    var percentage = difference / this.options.duration;
+
+                    /**
+                     * Don't ever let the percentage go higher than 1
+                     * This can happen if the counter is still animating and the user goes to a different tab
+                     * then comes back. The startTime and current time could be hugely different.
+                     */
+                    var percentage = Math.min((difference / this.options.duration), 1);
 
                     data.merge(canvas, {
                         current: EasingFunctions[this.options.easingFunction](percentage) * data.get(canvas).number
