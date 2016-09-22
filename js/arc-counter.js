@@ -200,6 +200,7 @@ EasingFunctions = {
                 number: element.dataset.number,
                 max: element.dataset.max,
                 text: element.dataset.text,
+                labelSuffix: (element.dataset.labelSuffix) ? element.dataset.labelSuffix : '',
                 current: 0,
                 visible: false
             });
@@ -332,25 +333,34 @@ EasingFunctions = {
         context.clearRect(0, 0, canvas.width, canvas.height);
 
         context.beginPath();
-        context.arc(canvas.width / 2, canvas.height / 2, canvas.width / 3, 0, 2 * Math.PI);
+        context.arc(canvas.width / 2, canvas.height / 2, ((canvas.width / 2) - (canvas.width / 10)), 0, 2 * Math.PI);
         context.lineWidth = canvas.width / 10;
         context.strokeStyle = this.options.fillColor;
         context.stroke();
 
         context.beginPath();
-        context.arc(canvas.width / 2, canvas.height / 2, canvas.width / 3, 1.5 * Math.PI, endStop, true);
+        context.arc(canvas.width / 2, canvas.height / 2, ((canvas.width / 2) - (canvas.width / 10)), 1.5 * Math.PI, endStop, true);
         context.lineWidth = canvas.width / 20;
         context.strokeStyle = this.options.strokeColor;
         context.stroke();
 
-        var smallTextSize = canvas.height / 17;
-        context.font = smallTextSize + 'px ' + this.options.fontFace;
+        if(data.get(canvas).text) {
+            var smallTextSize = canvas.height / 17;
+            context.font = smallTextSize + 'px ' + this.options.fontFace;
+            context.fillStyle = this.options.textColor;
+            context.textAlign = 'center';
+            context.fillText(data.get(canvas).text, canvas.width / 2, (canvas.height / 2) + (smallTextSize * 1.5));
+        }
+
+        var largeTextOffset = 0;
+        var largeTextSize = canvas.height / 5;
+        if(!data.get(canvas).text) {
+            largeTextOffset = 12;
+        }
+
+        context.font = largeTextSize + 'px ' + this.options.fontFace;
         context.fillStyle = this.options.textColor;
         context.textAlign = 'center';
-        context.fillText(data.get(canvas).text, canvas.width / 2, (canvas.height / 2) + (smallTextSize * 1.5));
-
-        var largeTextSize = canvas.height / 5;
-        context.font = largeTextSize + 'px ' + this.options.fontFace;
-        context.fillText(Math.round(data.get(canvas).current), canvas.width / 2, (canvas.height / 2));
+        context.fillText(Math.round(data.get(canvas).current) + data.get(canvas).labelSuffix, canvas.width / 2, (canvas.height / 2) + largeTextOffset);
     };
 })();
