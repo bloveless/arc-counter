@@ -128,7 +128,7 @@ EasingFunctions = {
             fillColor: 'rgba(0, 0, 0, 0.1)',
             textColor: '#000',
             fontFace: 'Calibri',
-            duration: 3000,
+            duration: 2000,
             easingFunction: 'easeInOutQuint',
             responsive: true,
             onlyAnimateOnVisible: true
